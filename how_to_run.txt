@@ -1,0 +1,11 @@
+cd 'token-counter'
+npm install
+npm run dev
+
+backend is also ther enow, as browsers canot directly write to files!
+cd 'token-counter'
+npm run api   # starts the tiny file-write API on port 5175
+npm run dev   # starts Vite dev server (frontend) on port 5173
+
+
+edit this for tokens number : "/Users/hitesh.modi/Desktop/Kinda Personal/Token Counter/token-counter/public/initialTotal.json"
