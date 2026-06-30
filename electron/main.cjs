@@ -1,8 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, globalShortcut, screen } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
 const DEFAULT_TOTAL = 39000
+const WINDOW_WIDTH = 300
+const COLLAPSED_HEIGHT = 180
+const MOVE_STEP = 60
+const SCREEN_MARGIN = 16
+
+let mainWindow = null
 
 function getDataPath() {
   return path.join(app.getPath('userData'), 'token-counter-data.json')
@@ -57,16 +63,24 @@ function writeData(next) {
 }
 
 function createWindow() {
+  const { workArea } = screen.getPrimaryDisplay()
+  const startX = workArea.x + workArea.width - WINDOW_WIDTH - SCREEN_MARGIN
+  const startY = workArea.y + SCREEN_MARGIN
+
   const win = new BrowserWindow({
-    width: 520,
-    height: 540,
-    minWidth: 420,
-    minHeight: 360,
+    width: WINDOW_WIDTH,
+    height: COLLAPSED_HEIGHT,
+    x: startX,
+    y: startY,
+    useContentSize: true,
     frame: false,
     transparent: true,
     hasShadow: true,
-    alwaysOnTop: true,
+    resizable: false,
+    maximizable: false,
     fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
     show: false,
     backgroundColor: '#00000000',
     webPreferences: {
@@ -76,11 +90,14 @@ function createWindow() {
     },
   })
 
+  mainWindow = win
+  win.setAlwaysOnTop(true, 'floating')
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
   let shown = false
   const showWindow = () => {
     if (shown || win.isDestroyed()) return
     shown = true
-    win.center()
     win.show()
     win.focus()
   }
@@ -123,11 +140,58 @@ ipcMain.handle('token:set-data', (_, next) => {
   return writeData(next)
 })
 
+ipcMain.handle('window:set-size', (_, size) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  const width = Math.max(240, Math.round(Number(size?.width) || WINDOW_WIDTH))
+  const height = Math.max(120, Math.round(Number(size?.height) || COLLAPSED_HEIGHT))
+  mainWindow.setContentSize(width, height, false)
+})
+
+function nudgeWindow(dx, dy) {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  const b = mainWindow.getBounds()
+  const { workArea } = screen.getPrimaryDisplay()
+  const x = Math.min(
+    Math.max(workArea.x, b.x + dx),
+    workArea.x + workArea.width - b.width,
+  )
+  const y = Math.min(
+    Math.max(workArea.y, b.y + dy),
+    workArea.y + workArea.height - b.height,
+  )
+  mainWindow.setBounds({ ...b, x, y })
+}
+
+function toggleVisibility() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (mainWindow.isVisible()) {
+    mainWindow.hide()
+  } else {
+    mainWindow.show()
+    mainWindow.focus()
+  }
+}
+
+function registerShortcuts() {
+  // Move the floating window with Cmd/Ctrl + Alt + Arrow keys.
+  globalShortcut.register('CommandOrControl+Alt+Up', () => nudgeWindow(0, -MOVE_STEP))
+  globalShortcut.register('CommandOrControl+Alt+Down', () => nudgeWindow(0, MOVE_STEP))
+  globalShortcut.register('CommandOrControl+Alt+Left', () => nudgeWindow(-MOVE_STEP, 0))
+  globalShortcut.register('CommandOrControl+Alt+Right', () => nudgeWindow(MOVE_STEP, 0))
+  // Hide / show the window.
+  globalShortcut.register('CommandOrControl+Alt+H', () => toggleVisibility())
+}
+
 app.whenReady().then(() => {
   createWindow()
+  registerShortcuts()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })
 
 app.on('window-all-closed', () => {

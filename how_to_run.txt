@@ -17,3 +17,10 @@ npm run dev
 
 cd 'token-counter'
 npm run electron
+
+
+Cmd/Ctrl + Alt + ↑ — move up
+Cmd/Ctrl + Alt + ↓ — move down
+Cmd/Ctrl + Alt + ← — move left
+Cmd/Ctrl + Alt + → — move right
+Cmd/Ctrl + Alt + H — hide / show toggle

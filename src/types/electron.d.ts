@@ -32,6 +32,7 @@ declare global {
           ts: number
         }>
       }>
+      setSize?: (width: number, height: number) => Promise<void>
     }
   }
 }
