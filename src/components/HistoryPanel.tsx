@@ -1,4 +1,3 @@
-import React from 'react'
 import { useTokenStorage } from '../hooks/useTokenStorage'
 import './HistoryPanel.css'
 

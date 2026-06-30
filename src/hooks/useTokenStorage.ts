@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type HistoryEntry = {
   id: string
@@ -8,7 +8,6 @@ export type HistoryEntry = {
   ts: number
 }
 
-const TOTAL_KEY = 'tokenTotal'
 const HISTORY_KEY = 'tokenHistory'
 const DEFAULT_TOTAL = 39000
 
@@ -66,6 +65,7 @@ async function writeInitialTotalToFile(value: number): Promise<boolean> {
 export function useTokenStorage() {
   // Initialize to DEFAULT and then immediately load from API/public file on mount.
   const [total, setTotal] = useState<number>(DEFAULT_TOTAL)
+  const totalRef = useRef<number>(DEFAULT_TOTAL)
 
   const [history, setHistory] = useState<HistoryEntry[]>(() => readHistory())
 
@@ -79,29 +79,32 @@ export function useTokenStorage() {
     }
   }, [history])
 
+  useEffect(() => {
+    totalRef.current = total
+  }, [total])
+
   const subtract = useCallback((amount: number) => {
     if (!isFinite(amount) || amount <= 0) return
-    setTotal((prev) => {
-      const before = prev
-      let after = prev - amount
-      if (after < 0) after = 0
-      const entry: HistoryEntry = {
-        id: String(Date.now()),
-        amount,
-        before,
-        after,
-        ts: Date.now(),
-      }
-      setHistory((h) => [entry, ...h])
-      // Persist to file via API (single source of truth). If it fails, we still update UI.
-      ;(async () => {
-        const ok = await writeInitialTotalToFile(after)
-        if (!ok) {
-          // Optionally, notify the user in UI — not implemented. Keep fallback behavior.
-        }
-      })()
-      return after
-    })
+    const before = totalRef.current
+    let after = before - amount
+    if (after < 0) after = 0
+
+    const entry: HistoryEntry = {
+      id: String(Date.now()),
+      amount,
+      before,
+      after,
+      ts: Date.now(),
+    }
+
+    totalRef.current = after
+    setTotal(after)
+    setHistory((h) => [entry, ...h])
+
+    // Persist to file via API (single source of truth). If it fails, we still update UI.
+    ;(async () => {
+      await writeInitialTotalToFile(after)
+    })()
   }, [])
 
   const set = useCallback((value: number) => {
@@ -116,6 +119,7 @@ export function useTokenStorage() {
   const reset = useCallback(() => {
     ;(async () => {
       const initial = await fetchInitialTotal()
+      totalRef.current = initial
       setTotal(initial)
       setHistory([])
       await writeInitialTotalToFile(initial)
@@ -129,9 +133,9 @@ export function useTokenStorage() {
   useEffect(() => {
     ;(async () => {
       const initial = await fetchInitialTotal()
+      totalRef.current = initial
       setTotal(initial)
-      // we do not set localStorage as the primary store; file/API is the single source
-      setHistory([])
+      // Keep subtraction history from localStorage; only the running total is sourced from file/API.
     })()
   }, [])
 

@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import { useTokenStorage } from './hooks/useTokenStorage'
 
 function App() {
-  const { total, subtract } = useTokenStorage()
+  const { total, history, subtract } = useTokenStorage()
   const [input, setInput] = useState<string>('')
+  const recentSubtractions = history.slice(0, 5)
 
   const handleSubtract = () => {
     const n = Number(input)
@@ -31,6 +32,22 @@ function App() {
           />
           <button className="btn" onClick={handleSubtract}>Subtract</button>
         </div>
+
+        <section className="recent-wrap" aria-live="polite">
+          <h2 className="recent-title">Last 5 Subtractions</h2>
+          {recentSubtractions.length === 0 ? (
+            <p className="recent-empty">No subtractions yet.</p>
+          ) : (
+            <ul className="recent-list">
+              {recentSubtractions.map((item) => (
+                <li key={item.id} className="recent-item">
+                  <span className="recent-amount">-{item.amount.toLocaleString()}</span>
+                  <span className="recent-after">Remaining: {item.after.toLocaleString()}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   )
