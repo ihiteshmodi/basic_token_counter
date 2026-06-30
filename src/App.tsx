@@ -43,7 +43,7 @@ function App() {
   return (
     <div className="app-root">
       <main className="counter-card" ref={cardRef}>
-        <h1 className="label">Total Tokens</h1>
+        <h1 className="label">Remaining Credits</h1>
         <div className="total-display" aria-live="polite">{total.toLocaleString()}</div>
 
         <div className="controls">
