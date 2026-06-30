@@ -9,3 +9,11 @@ npm run dev   # starts Vite dev server (frontend) on port 5173
 
 
 edit this for tokens number : "/Users/hitesh.modi/Desktop/Kinda Personal/Token Counter/token-counter/public/initialTotal.json"
+
+
+AFTER ELECTRON:
+cd 'token-counter'
+npm run dev
+
+cd 'token-counter'
+npm run electron

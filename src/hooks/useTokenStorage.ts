@@ -11,9 +11,6 @@ export type HistoryEntry = {
 const HISTORY_KEY = 'tokenHistory'
 const DEFAULT_TOTAL = 39000
 
-// Local API base (absolute) — the frontend will use this as the single source of truth.
-const API_BASE = 'http://localhost:5175'
-
 function readHistory(): HistoryEntry[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY)
@@ -25,19 +22,6 @@ function readHistory(): HistoryEntry[] {
 }
 
 async function fetchInitialTotal(): Promise<number> {
-  // Prefer the local API (single source of truth). If API is unavailable, fall back
-  // to the served public JSON file so the app can still show something.
-  try {
-    const resp = await fetch(`${API_BASE}/api/initialTotal`, { cache: 'no-store' })
-    if (resp.ok) {
-      const data = await resp.json()
-      const n = Number(data?.initialTotal ?? data?.value ?? data)
-      return Number.isFinite(n) ? n : DEFAULT_TOTAL
-    }
-  } catch {
-    // ignore and try file
-  }
-
   try {
     const resp = await fetch('/initialTotal.json', { cache: 'no-store' })
     if (!resp.ok) return DEFAULT_TOTAL
@@ -49,17 +33,8 @@ async function fetchInitialTotal(): Promise<number> {
   }
 }
 
-async function writeInitialTotalToFile(value: number): Promise<boolean> {
-  try {
-    const resp = await fetch(`${API_BASE}/api/initialTotal`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initialTotal: value }),
-    })
-    return resp.ok
-  } catch {
-    return false
-  }
+function hasBridge() {
+  return typeof window !== 'undefined' && !!window.tokenBridge
 }
 
 export function useTokenStorage() {
@@ -68,8 +43,7 @@ export function useTokenStorage() {
   const totalRef = useRef<number>(DEFAULT_TOTAL)
 
   const [history, setHistory] = useState<HistoryEntry[]>(() => readHistory())
-
-  // Do not persist to localStorage as a primary store — we use the API/file as source of truth.
+  const historyRef = useRef<HistoryEntry[]>(readHistory())
 
   useEffect(() => {
     try {
@@ -77,6 +51,7 @@ export function useTokenStorage() {
     } catch {
       // ignore
     }
+    historyRef.current = history
   }, [history])
 
   useEffect(() => {
@@ -99,20 +74,26 @@ export function useTokenStorage() {
 
     totalRef.current = after
     setTotal(after)
-    setHistory((h) => [entry, ...h])
+    const nextHistory = [entry, ...historyRef.current]
+    setHistory(nextHistory)
 
-    // Persist to file via API (single source of truth). If it fails, we still update UI.
+    // Persist to Electron store when available.
     ;(async () => {
-      await writeInitialTotalToFile(after)
+      if (hasBridge()) {
+        await window.tokenBridge!.setData({ total: after, history: nextHistory })
+      }
     })()
   }, [])
 
   const set = useCallback((value: number) => {
     if (!isFinite(value) || value < 0) return
     const v = Math.max(0, Math.floor(value))
+    totalRef.current = v
     setTotal(v)
     ;(async () => {
-      await writeInitialTotalToFile(v)
+      if (hasBridge()) {
+        await window.tokenBridge!.setData({ total: v, history: historyRef.current })
+      }
     })()
   }, [])
 
@@ -122,7 +103,10 @@ export function useTokenStorage() {
       totalRef.current = initial
       setTotal(initial)
       setHistory([])
-      await writeInitialTotalToFile(initial)
+      historyRef.current = []
+      if (hasBridge()) {
+        await window.tokenBridge!.setData({ total: initial, history: [] })
+      }
     })()
   }, [])
 
@@ -132,10 +116,22 @@ export function useTokenStorage() {
   // hasn't changed the stored total.
   useEffect(() => {
     ;(async () => {
+      if (hasBridge()) {
+        const data = await window.tokenBridge!.getData()
+        const loadedTotal = Number(data?.total)
+        const loadedHistory = Array.isArray(data?.history) ? data.history : []
+        const safeTotal = Number.isFinite(loadedTotal) ? loadedTotal : DEFAULT_TOTAL
+        totalRef.current = safeTotal
+        setTotal(safeTotal)
+        setHistory(loadedHistory)
+        historyRef.current = loadedHistory
+        return
+      }
+
       const initial = await fetchInitialTotal()
       totalRef.current = initial
       setTotal(initial)
-      // Keep subtraction history from localStorage; only the running total is sourced from file/API.
+      // Browser fallback for non-electron runs.
     })()
   }, [])
 

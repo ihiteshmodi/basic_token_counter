@@ -186,18 +186,21 @@
 /* Token counter styles */
 .app-root {
   display: flex;
-  gap: 24px;
-  padding: 40px;
-  align-items: flex-start;
+  padding: 18px;
+  align-items: center;
   justify-content: center;
+  -webkit-app-region: drag;
 }
 
 .counter-card {
-  width: 520px;
-  padding: 28px;
-  border-radius: 12px;
-  background: var(--card-bg);
+  width: 100%;
+  max-width: 460px;
+  padding: 22px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
   box-shadow: var(--shadow);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  backdrop-filter: blur(10px);
   text-align: center;
 }
 
@@ -210,16 +213,28 @@
   margin: 8px 0 20px 0;
 }
 
-.controls { display: flex; gap: 8px; align-items: center; justify-content: center }
-.num-input { width: 180px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border) }
-.btn { padding: 8px 12px; border-radius: 8px; border: 1px solid transparent; background: var(--accent-bg); color: var(--accent); cursor: pointer }
+.controls { display: flex; gap: 8px; align-items: center; justify-content: center; -webkit-app-region: no-drag }
+.num-input { width: 220px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--text-h) }
+.btn { padding: 9px 14px; border-radius: 10px; border: 1px solid transparent; background: var(--accent-bg); color: var(--accent); cursor: pointer }
 .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text) }
+
+.dropdown-btn {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  color: var(--text-h);
+  padding: 8px 10px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
 
 .recent-wrap {
   margin-top: 18px;
   border-top: 1px solid var(--border);
   padding-top: 14px;
   text-align: left;
+  -webkit-app-region: no-drag;
 }
 
 .recent-title {
@@ -263,10 +278,7 @@
   color: var(--text);
 }
 
-.history-panel { width: 360px }
-
 @media (max-width: 900px) {
-  .app-root { flex-direction: column; padding: 20px }
-  .history-panel { width: 100% }
-  .counter-card { width: 100% }
+  .app-root { padding: 12px }
+  .counter-card { width: 100%; padding: 16px }
 }

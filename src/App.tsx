@@ -5,6 +5,7 @@ import { useTokenStorage } from './hooks/useTokenStorage'
 function App() {
   const { total, history, subtract } = useTokenStorage()
   const [input, setInput] = useState<string>('')
+  const [showHistory, setShowHistory] = useState<boolean>(false)
   const recentSubtractions = history.slice(0, 5)
 
   const handleSubtract = () => {
@@ -33,21 +34,31 @@ function App() {
           <button className="btn" onClick={handleSubtract}>Subtract</button>
         </div>
 
-        <section className="recent-wrap" aria-live="polite">
-          <h2 className="recent-title">Last 5 Subtractions</h2>
-          {recentSubtractions.length === 0 ? (
-            <p className="recent-empty">No subtractions yet.</p>
-          ) : (
-            <ul className="recent-list">
-              {recentSubtractions.map((item) => (
-                <li key={item.id} className="recent-item">
-                  <span className="recent-amount">-{item.amount.toLocaleString()}</span>
-                  <span className="recent-after">Remaining: {item.after.toLocaleString()}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <button
+          className="dropdown-btn"
+          type="button"
+          onClick={() => setShowHistory((s) => !s)}
+          aria-expanded={showHistory}
+        >
+          {showHistory ? 'Hide Last 5 Subtractions' : 'Show Last 5 Subtractions'}
+        </button>
+
+        {showHistory ? (
+          <section className="recent-wrap" aria-live="polite">
+            {recentSubtractions.length === 0 ? (
+              <p className="recent-empty">No subtractions yet.</p>
+            ) : (
+              <ul className="recent-list">
+                {recentSubtractions.map((item) => (
+                  <li key={item.id} className="recent-item">
+                    <span className="recent-amount">-{item.amount.toLocaleString()}</span>
+                    <span className="recent-after">Remaining: {item.after.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
       </main>
     </div>
   )
