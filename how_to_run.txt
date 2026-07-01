@@ -1,18 +1,4 @@
 cd 'token-counter'
-npm install
-npm run dev
-
-backend is also ther enow, as browsers canot directly write to files!
-cd 'token-counter'
-npm run api   # starts the tiny file-write API on port 5175
-npm run dev   # starts Vite dev server (frontend) on port 5173
-
-
-edit this for tokens number : "/Users/hitesh.modi/Desktop/Kinda Personal/Token Counter/token-counter/public/initialTotal.json"
-
-
-AFTER ELECTRON:
-cd 'token-counter'
 npm run dev
 
 cd 'token-counter'
@@ -24,3 +10,20 @@ Cmd/Ctrl + Alt + ↓ — move down
 Cmd/Ctrl + Alt + ← — move left
 Cmd/Ctrl + Alt + → — move right
 Cmd/Ctrl + Alt + H — hide / show toggle
+
+
+How to reset tokens count to 39000 again:
+What to do to reset to 39000
+Pick ONE of these:
+
+-> Option A — edit the live file (keeps it simple)
+Open ~/Library/Application Support/token-counter/token-counter-data.json
+Change "total" to 39000
+Save, then restart the app.
+To open it from Finder: press Cmd+Shift+G in Finder and paste: "~/Library/Application Support/token-counter/"
+GO ABOVE WITH FINDER AND DELETE! [This file has history as well!]
+
+-> Option B — delete the live file so it re-seeds from the repo file
+First set public/initialTotal.json to { "initialTotal": 39000 }
+Delete ~/Library/Application Support/token-counter/token-counter-data.json
+Restart the app — it will re-create the file starting at 39000.
